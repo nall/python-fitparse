@@ -273,11 +273,20 @@ def fix_units(data):
 
 def parse_csv_fields(data, num_expected_if_empty):
     if data is None:
-        return [None] * num_expected_if_empty
+        result = [None]
     elif isinstance(data, basestring):
-        return [(int(x.strip()) if x.strip().isdigit() else x.strip()) for x in data.strip().split(',')]
+        result = [(int(x.strip()) if x.strip().isdigit() else x.strip()) for x in data.strip().split(',')]
     else:
-        return [data]
+        result = [data]
+
+    # Some fields like score,opponent_score are multiple components, but share the data
+    # In this case, just replicate it
+    multiplier = 1
+    if num_expected_if_empty > 0 and len(result) != num_expected_if_empty:
+        assert num_expected_if_empty % len(result) == 0, "Found %d items, not a multiple of %d" % (len(result), num_expected_if_empty)
+        multiplier = int(num_expected_if_empty / len(result))
+
+    return result * multiplier
 
 
 def parse_spreadsheet(xls_file, *sheet_names):
@@ -477,7 +486,7 @@ def get_xls_and_version_from_zip(path):
     if version_match:
         profile_version = ("%f" % float(version_match.group(1))).rstrip('0').ljust(4, '0')
 
-    return archive.open('Profile.xls'), profile_version
+    return archive.open('Profile.xlsx'), profile_version
 
 
 def main(input_xls_or_zip, output_py_path=None):
