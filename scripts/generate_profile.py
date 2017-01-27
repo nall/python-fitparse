@@ -20,8 +20,7 @@ import zipfile
 import xlrd  # Dev requirement for parsing Excel spreadsheet
 
 
-XLS_HEADER_MAGIC = '\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1'
-
+XLS_HEADER_MAGIC = '\x50\x4B\x03\x04\x14\x00\x06\x00'
 
 def header(header, indent=0):
     return '%s%s' % (' ' * indent, (' %s ' % header).center(78 - indent, '#'))
@@ -273,20 +272,11 @@ def fix_units(data):
 
 def parse_csv_fields(data, num_expected_if_empty):
     if data is None:
-        result = [None]
+        return [None] * num_expected_if_empty
     elif isinstance(data, basestring):
-        result = [(int(x.strip()) if x.strip().isdigit() else x.strip()) for x in data.strip().split(',')]
+        return [(int(x.strip()) if x.strip().isdigit() else x.strip()) for x in data.strip().split(',')]
     else:
-        result = [data]
-
-    # Some fields like score,opponent_score are multiple components, but share the data
-    # In this case, just replicate it
-    multiplier = 1
-    if num_expected_if_empty > 0 and len(result) != num_expected_if_empty:
-        assert num_expected_if_empty % len(result) == 0, "Found %d items, not a multiple of %d" % (len(result), num_expected_if_empty)
-        multiplier = int(num_expected_if_empty / len(result))
-
-    return result * multiplier
+        return [data]
 
 
 def parse_spreadsheet(xls_file, *sheet_names):
